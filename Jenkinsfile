@@ -11,17 +11,23 @@ pipeline {
  
     stage('Checkout') {
       steps {
-        // Multibranch pipeline auto-checkout
         checkout scm
       }
     }
  
     stage('Build Docker Image') {
       steps {
-        sh """
-          echo "Building Docker image for branch: ${BRANCH_NAME}"
-          ./build.sh ${IMAGE_NAME} ${BRANCH_NAME}
-        """
+        script {
+          echo "Building Docker image for branch: ${env.BRANCH_NAME}"
+ 
+          if (env.BRANCH_NAME == 'dev') {
+            sh "docker build -t ${IMAGE_NAME}:dev ."
+          }
+ 
+          if (env.BRANCH_NAME == 'master') {
+            sh "docker build -t ${IMAGE_NAME}:prod ."
+          }
+        }
       }
     }
  
@@ -42,12 +48,12 @@ pipeline {
  
             if (env.BRANCH_NAME == 'dev') {
               sh """
-                docker tag ${IMAGE_NAME}:dev ${DEV_REPO}:latest
-                docker push ${DEV_REPO}:latest
+                docker tag ${IMAGE_NAME}:dev ${DEV_REPO}:dev
+                docker push ${DEV_REPO}:dev
               """
             }
  
-            if (env.BRANCH_NAME == 'prod') {
+            if (env.BRANCH_NAME == 'master') {
               sh """
                 docker tag ${IMAGE_NAME}:prod ${PROD_REPO}:latest
                 docker push ${PROD_REPO}:latest
@@ -60,7 +66,7 @@ pipeline {
  
     stage('Deploy to Server') {
       when {
-        branch 'prod'
+        branch 'master'
       }
       steps {
         sh """
@@ -72,10 +78,10 @@ pipeline {
  
   post {
     success {
-      echo "✅ Pipeline SUCCESS for branch: ${BRANCH_NAME}"
+      echo "✅ Pipeline SUCCESS for branch: ${env.BRANCH_NAME}"
     }
     failure {
-      echo "❌ Pipeline FAILED for branch: ${BRANCH_NAME}"
+      echo "❌ Pipeline FAILED for branch: ${env.BRANCH_NAME}"
     }
   }
 }
