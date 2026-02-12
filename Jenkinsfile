@@ -2,7 +2,7 @@ pipeline {
   agent any
  
   environment {
-    IMAGE_NAME = "ecom-project"
+    IMAGE_NAME = "ecom-app"
     DEV_REPO   = "pranathi20222/ecomm_publicrepo"
     PROD_REPO  = "pranathi20222/ecomm_privaterepo"
   }
